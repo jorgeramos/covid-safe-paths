@@ -106,20 +106,14 @@ const Main = () => {
 
   return (
     <View style={styles.backgroundImage}>
-      {page}
+      <ExposureNotificationNotAvailablePage />
       <SettingsNavButton />
     </View>
   );
 };
 
 const MainNavigate = props => {
-  return (
-    <FeatureFlag
-      name='better_location_status_checks'
-      fallback={<LocationTracking {...props} tracingStrategy={config.tracingStrategy} />}>
-      <Main />
-    </FeatureFlag>
-  );
+  return <Main />;
 };
 
 export { Main, MainNavigate };
