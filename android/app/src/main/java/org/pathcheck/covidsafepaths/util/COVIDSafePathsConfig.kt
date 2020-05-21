@@ -9,9 +9,8 @@ class COVIDSafePathsConfig(reactContext: ReactApplicationContext) : ReactContext
     override fun getName(): String {
         return "COVIDSafePathsConfig"
     }
-
-    @ReactMethod
-    fun getTracingStrategy(): String {
+    
+    @ReactMethod(isBlockingSynchronousMethod = true)    fun getTracingStrategy(): String {
         if (BuildConfig.APPLICATION_ID == "org.pathcheck.covidsafepaths") {
             return "gps"
         } else {
