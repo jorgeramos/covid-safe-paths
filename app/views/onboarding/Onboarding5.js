@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState, useContext} from 'react';
 import {
   Dimensions,
   ImageBackground,
@@ -15,20 +15,21 @@ import {
   request,
   requestNotifications,
 } from 'react-native-permissions';
-import { SvgXml } from 'react-native-svg';
+import {SvgXml} from 'react-native-svg';
 
-import { isPlatformiOS } from './../../Util';
-import { Icons, Images } from '../../assets';
-import { Button } from '../../components/Button';
-import { Typography } from '../../components/Typography';
+import {isPlatformiOS} from './../../Util';
+import {Icons, Images} from '../../assets';
+import {Button} from '../../components/Button';
+import {Typography} from '../../components/Typography';
 import Colors from '../../constants/colors';
-import { PARTICIPATE } from '../../constants/storage';
-import { Theme } from '../../constants/themes';
-import { config } from '../../COVIDSafePathsConfig';
-import { SetStoreData } from '../../helpers/General';
+import {PARTICIPATE} from '../../constants/storage';
+import {Theme} from '../../constants/themes';
+import {config} from '../../COVIDSafePathsConfig';
+import {SetStoreData} from '../../helpers/General';
 import languages from '../../locales/languages';
-import { HCAService } from '../../services/HCAService';
-import { sharedStyles } from './styles';
+import {HCAService} from '../../services/HCAService';
+import {sharedStyles} from './styles';
+import PermissionsContext from '../../PermissionsContext'
 
 const width = Dimensions.get('window').width;
 
@@ -46,7 +47,7 @@ const StepEnum = {
   DONE: 4,
 };
 
-const PermissionDescription = ({ title, status }) => {
+const PermissionDescription = ({title, status}) => {
   let icon;
   switch (status) {
     case PermissionStatusEnum.UNKNOWN:
@@ -70,7 +71,8 @@ const PermissionDescription = ({ title, status }) => {
   );
 };
 
-const Onboarding = ({ navigation }) => {
+const Onboarding = ({navigation}) => {
+  const {locationPermission, requestLocationPermission} = useContext(PermissionsContext)
   const isGPSTracingStrategy = () => config.tracingStrategy === 'gps';
 
   const [currentStep, setCurrentStep] = useState(
@@ -80,9 +82,6 @@ const Onboarding = ({ navigation }) => {
     PermissionStatusEnum.UNKNOWN,
   );
   const [locationPermission, setLocationPermission] = useState(
-    PermissionStatusEnum.UNKNOWN,
-  );
-  const [bluetoothPermission, setBluetoothPermission] = useState(
     PermissionStatusEnum.UNKNOWN,
   );
   const [authSubscriptionStatus, setAuthSubscriptionStatus] = useState(
@@ -190,7 +189,7 @@ const Onboarding = ({ navigation }) => {
 
   const checkNotificationStatus = async () => {
     const nextStep = getNextStep(StepEnum.NOTIFICATIONS);
-    const { status } = await checkNotifications();
+    const {status} = await checkNotifications();
 
     switch (status) {
       case RESULTS.GRANTED:
@@ -258,7 +257,7 @@ const Onboarding = ({ navigation }) => {
 
   const requestNotification = async () => {
     const nextStep = getNextStep(StepEnum.NOTIFICATIONS);
-    const { status } = await requestNotifications(['alert', 'badge', 'sound']);
+    const {status} = await requestNotifications(['alert', 'badge', 'sound']);
 
     switch (status) {
       case RESULTS.GRANTED:
@@ -521,8 +520,8 @@ const Onboarding = ({ navigation }) => {
               {isGPSTracingStrategy() ? (
                 <LocationPermissionQuestions />
               ) : (
-                <BluetoothPermissionQuestions />
-              )}
+                  <BluetoothPermissionQuestions />
+                )}
             </View>
           </View>
         </View>
