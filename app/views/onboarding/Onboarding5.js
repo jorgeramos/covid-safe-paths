@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import {
   PERMISSIONS,
   RESULTS,
@@ -15,6 +16,7 @@ import {
   request,
   requestNotifications,
 } from 'react-native-permissions';
+
 import {SvgXml} from 'react-native-svg';
 
 import {isPlatformiOS} from './../../Util';
@@ -52,17 +54,19 @@ const Onboarding = ({navigation}) => {
   const {
     locationPermission,
     requestLocationPermission,
-    bluetoothPermission,
-    requestBluetoothPermission} = useContext(PermissionsContext)
+    notificationPermission,
+    requestNotificationPermission
+  } = useContext(PermissionsContext)
   const isGPS = config.tracingStrategy === 'gps'
   const isiOS = isPlatformiOS()
 
   const [currentStep, setCurrentStep] = useState(
     isGPS ? StepEnum.LOCATION : StepEnum.BLUETOOTH,
   );
-  const [notificationPermission, setNotificationPermission] = useState(
-    PermissionStatusEnum.UNKNOWN,
-  );
+
+  // const [notificationPermission, setNotificationPermission] = useState(
+  //   PermissionStatusEnum.UNKNOWN,
+  // );
 
   const [authSubscriptionStatus, setAuthSubscriptionStatus] = useState(
     PermissionStatusEnum.UNKNOWN,
@@ -100,7 +104,7 @@ const Onboarding = ({navigation}) => {
 
   const checkLocationStatus = async () => {
     const nextStep = getNextStep(StepEnum.LOCATION);
-    const setting = getLocationPermissionSetting();
+    // const setting = getLocationPermissionSetting();
     const status = await check(setting);
 
     switch (status) {
@@ -117,11 +121,12 @@ const Onboarding = ({navigation}) => {
 
   const requestLocation = async () => {
     const nextStep = getNextStep(StepEnum.LOCATION);
-    const locationPermission = getLocationPermissionSetting();
-    requestLocationPermission()
-    const status = await request(locationPermission);
+    // const locationPermission = getLocationPermissionSetting();
+    const status = await requestLocationPermission()
+    // const status = await request(locationPermission);
 
-    switch (status) {
+    console.log("got status", status)
+    switch (locationPermission) {
       case RESULTS.GRANTED:
         setCurrentStep(nextStep);
         break;
@@ -182,15 +187,15 @@ const Onboarding = ({navigation}) => {
     }
   };
 
-  /**
-   * Gets the respective location permissions settings string
-   * for the user's current device.
-   *   */
-  const getLocationPermissionSetting = () => {
-    return isPlatformiOS()
-      ? PERMISSIONS.IOS.LOCATION_ALWAYS
-      : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-  };
+  // #<{(|*
+  //  * Gets the respective location permissions settings string
+  //  * for the user's current device.
+  //  *   |)}>#
+  // const getLocationPermissionSetting = () => {
+  //   return isPlatformiOS()
+  //     ? PERMISSIONS.IOS.LOCATION_ALWAYS
+  //     : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+  // };
 
   // Using dummy permission strings for time being
   // Replace with ExposureNotification Permissions
@@ -253,12 +258,16 @@ const Onboarding = ({navigation}) => {
   };
 
   const onButtonPressed = async () => {
+    console.log("Pressing button", currentStep)
+
     switch (currentStep) {
       case StepEnum.LOCATION:
-        requestLocation();
+        console.log('requesting location...')
+        requestLocationPermission();
         break;
       case StepEnum.BLUETOOTH:
-        requestBluetooth();
+        console.log('requesting bluetooth...')
+        requestBluetoothPermission();
         break;
       case StepEnum.NOTIFICATIONS:
         // requestNotification();

@@ -2,9 +2,12 @@ import React, {useEffect, useState, createContext} from "react"
 import {Rationale, Platform} from "react-native"
 import {
   PERMISSIONS,
-  request,
   PermissionStatus,
   Permission,
+  request,
+  check,
+  checkNotifications,
+  requestNotifications,
 } from "react-native-permissions"
 
 import {config} from './COVIDSafePathsConfig'
@@ -16,8 +19,10 @@ const PermissionStatusEnum = {
 };
 
 const PermissionsContext = createContext({
-  hasLocationPermissionGranted: false,
-  requestPermission: () => {},
+  locationPermission: PermissionStatusEnum.UNKNOWN,
+  requestLocationPermission: () => {},
+  notificationPermission: PermissionStatusEnum.UNKNOWN,
+  requestNotificationPermission: () => {},
 })
 
 const PermissionsProvider = ({children}) => {
@@ -26,10 +31,9 @@ const PermissionsProvider = ({children}) => {
     locationPermission,
     setLocationPermission,
   ] = useState(PermissionStatusEnum.UNKNOWN)
-
   const [
-    bluetoothPermission,
-    setBluetoothPermission,
+    notificationPermission,
+    setNotificationPermission,
   ] = useState(PermissionStatusEnum.UNKNOWN)
 
   const isGPS = tracingStrategy === "gps"
@@ -37,18 +41,19 @@ const PermissionsProvider = ({children}) => {
   useEffect(() => {
     if (isGPS) {
       requestLocationPermission()
-    } else {
-      // checkBluetoothStatus();
     }
 
     if (Platform.OS === "ios") {
-      // checkNotificationStatus();
+      checkNotificationStatus();
     }
 
     if (__DEV__ && isGPS) {
-      // checkSubsriptionStatus();
+      checkSubsriptionStatus();
     }
   });
+
+  const checkNotificationStatus = () => {}
+  const checkSubsriptionStatus = () => {}
 
 
   // const locationWhenInUseRationale = {
@@ -60,6 +65,7 @@ const PermissionsProvider = ({children}) => {
   // }
 
   const requestLocationPermission = () => {
+    console.log('in context, requesting permissions...')
     if (Platform.OS === "ios") {
       requestLocationForPlatform(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE)
     } else if (Platform.OS === "android") {
@@ -67,9 +73,11 @@ const PermissionsProvider = ({children}) => {
     }
   }
 
-  const requestLocationForPlatform = (permission) => {
-    request(permission, locationWhenInUseRationale).then(
+  const requestLocationForPlatform = async (permission) => {
+    // request(permission, locationWhenInUseRationale).then(
+    await request(permission).then(
       (result) => {
+        console.log("got result", result)
         switch (result) {
           case "unavailable": {
             setLocationPermission(PermissionStatusEnum.UNKNOWN)
@@ -97,15 +105,16 @@ const PermissionsProvider = ({children}) => {
     )
   }
 
-  const requestBluetoothPermission = () => {}
+  const requestNotificationPermission = () => {}
+
 
   return (
     <PermissionsContext.Provider
       value={{
         locationPermission,
         requestLocationPermission,
-        bluetoothPermission,
-        requestBluetoothPermission
+        notificationPermission,
+        requestNotificationPermission
       }}>
       {children}
     </PermissionsContext.Provider>
