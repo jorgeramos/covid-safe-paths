@@ -1,4 +1,4 @@
-import React, {useState, createContext} from "react"
+import React, {useEffect, useState, createContext} from "react"
 import {Rationale, Platform} from "react-native"
 import {
   PERMISSIONS,
@@ -7,6 +7,7 @@ import {
   Permission,
 } from "react-native-permissions"
 
+import {config} from './COVIDSafePathsConfig'
 
 const PermissionStatusEnum = {
   UNKNOWN: 0,
@@ -20,10 +21,35 @@ const PermissionsContext = createContext({
 })
 
 const PermissionsProvider = ({children}) => {
+  const {tracingStrategy} = config
   const [
     locationPermission,
     setLocationPermission,
   ] = useState(PermissionStatusEnum.UNKNOWN)
+
+  const [
+    bluetoothPermission,
+    setBluetoothPermission,
+  ] = useState(PermissionStatusEnum.UNKNOWN)
+
+  const isGPS = tracingStrategy === "gps"
+
+  useEffect(() => {
+    if (isGPS) {
+      requestLocationPermission()
+    } else {
+      // checkBluetoothStatus();
+    }
+
+    if (Platform.OS === "ios") {
+      // checkNotificationStatus();
+    }
+
+    if (__DEV__ && isGPS) {
+      // checkSubsriptionStatus();
+    }
+  });
+
 
   // const locationWhenInUseRationale = {
   //   title: strings.title,
@@ -71,9 +97,16 @@ const PermissionsProvider = ({children}) => {
     )
   }
 
+  const requestBluetoothPermission = () => {}
+
   return (
     <PermissionsContext.Provider
-      value={{locationPermission, requestLocationPermission}}>
+      value={{
+        locationPermission,
+        requestLocationPermission,
+        bluetoothPermission,
+        requestBluetoothPermission
+      }}>
       {children}
     </PermissionsContext.Provider>
   )

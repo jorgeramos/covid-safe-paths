@@ -59,6 +59,10 @@ const PermissionDescription = ({title, status}) => {
     case PermissionStatusEnum.DENIED:
       icon = Icons.PermissionDenied;
       break;
+    default:
+      icon = Icons.PermissionUnknown;
+      break;
+
   }
 
   return (
@@ -72,27 +76,30 @@ const PermissionDescription = ({title, status}) => {
 };
 
 const Onboarding = ({navigation}) => {
-  const {locationPermission, requestLocationPermission} = useContext(PermissionsContext)
-  const isGPSTracingStrategy = () => config.tracingStrategy === 'gps';
+  const {
+    locationPermission,
+    requestLocationPermission,
+    bluetoothPermission,
+    requestBluetoothPermission} = useContext(PermissionsContext)
+  const isGPS = config.tracingStrategy === 'gps'
+  const isiOS = isPlatformiOS()
 
   const [currentStep, setCurrentStep] = useState(
-    isGPSTracingStrategy() ? StepEnum.LOCATION : StepEnum.BLUETOOTH,
+    isGPS ? StepEnum.LOCATION : StepEnum.BLUETOOTH,
   );
   const [notificationPermission, setNotificationPermission] = useState(
     PermissionStatusEnum.UNKNOWN,
   );
-  const [locationPermission, setLocationPermission] = useState(
-    PermissionStatusEnum.UNKNOWN,
-  );
+
   const [authSubscriptionStatus, setAuthSubscriptionStatus] = useState(
     PermissionStatusEnum.UNKNOWN,
   );
 
-  useEffect(() => {
-    isGPSTracingStrategy() ? checkLocationStatus() : checkBluetoothStatus();
-    isPlatformiOS() && checkNotificationStatus();
-    __DEV__ && isGPSTracingStrategy() && checkSubsriptionStatus();
-  });
+  // useEffect(() => {
+  //   isGPSTracingStrategy() ? checkLocationStatus() : checkBluetoothStatus();
+  //   isPlatformiOS() && checkNotificationStatus();
+  //   __DEV__ && isGPSTracingStrategy() && checkSubsriptionStatus();
+  // });
 
   /**
    * Helper method to determine the next step for permission requests.
@@ -110,7 +117,7 @@ const Onboarding = ({navigation}) => {
       case StepEnum.BLUETOOTH:
         return getBluetoothNextStep();
       case StepEnum.NOTIFICATIONS:
-        return __DEV__ && isGPSTracingStrategy()
+        return __DEV__ && isGPS
           ? StepEnum.HCA_SUBSCRIPTION
           : StepEnum.DONE;
       case StepEnum.HCA_SUBSCRIPTION:
@@ -138,54 +145,19 @@ const Onboarding = ({navigation}) => {
   const requestLocation = async () => {
     const nextStep = getNextStep(StepEnum.LOCATION);
     const locationPermission = getLocationPermissionSetting();
+    requestLocationPermission()
     const status = await request(locationPermission);
 
     switch (status) {
       case RESULTS.GRANTED:
         setCurrentStep(nextStep);
-        setLocationPermission(PermissionStatusEnum.GRANTED);
         break;
       case RESULTS.BLOCKED:
         setCurrentStep(nextStep);
-        setLocationPermission(nextStep);
         break;
     }
   };
 
-  const checkBluetoothStatus = async () => {
-    const nextStep = getNextStep(StepEnum.BLUETOOTH);
-    const setting = getBluetoothPermissionSetting();
-    const status = await check(setting);
-
-    switch (status) {
-      case RESULTS.GRANTED:
-        setCurrentStep(nextStep);
-        setBluetoothPermission(PermissionStatusEnum.GRANTED);
-        break;
-      case RESULTS.BLOCKED:
-        setCurrentStep(nextStep);
-        setBluetoothPermission(PermissionStatusEnum.DENIED);
-        break;
-    }
-  };
-
-  const requestBluetooth = async () => {
-    const nextStep = getNextStep(StepEnum.BLUETOOTH);
-    // const bluetoothPermission = getBluetoothPermissionSetting();
-    // const status = await request(bluetoothPermission);
-    const status = RESULTS.GRANTED;
-
-    switch (status) {
-      case RESULTS.GRANTED:
-        setCurrentStep(nextStep);
-        setBluetoothPermission(PermissionStatusEnum.GRANTED);
-        break;
-      case RESULTS.BLOCKED:
-        setCurrentStep(nextStep);
-        setBluetoothPermission(nextStep);
-        break;
-    }
-  };
 
   const checkNotificationStatus = async () => {
     const nextStep = getNextStep(StepEnum.NOTIFICATIONS);
@@ -291,24 +263,23 @@ const Onboarding = ({navigation}) => {
     switch (currentStep) {
       case StepEnum.LOCATION:
         setCurrentStep(nextStep);
-        setLocationPermission(status);
+        // setLocationPermission(status);
         break;
       case StepEnum.BLUETOOTH:
         setCurrentStep(nextStep);
-        setBluetoothPermission(status);
         break;
       case StepEnum.NOTIFICATIONS:
         setCurrentStep(nextStep);
-        setNotificationPermission(status);
+        // setNotificationPermission(status);
         break;
       case StepEnum.HCA_SUBSCRIPTION:
         setCurrentStep(nextStep);
-        setAuthSubscriptionStatus(status);
+        // setAuthSubscriptionStatus(status);
         break;
     }
   };
 
-  const buttonPressed = async () => {
+  const onButtonPressed = async () => {
     switch (currentStep) {
       case StepEnum.LOCATION:
         requestLocation();
@@ -317,10 +288,10 @@ const Onboarding = ({navigation}) => {
         requestBluetooth();
         break;
       case StepEnum.NOTIFICATIONS:
-        requestNotification();
+        // requestNotification();
         break;
       case StepEnum.HCA_SUBSCRIPTION:
-        requestHCASubscription();
+        // requestHCASubscription();
         break;
       case StepEnum.DONE:
         SetStoreData(
@@ -332,123 +303,67 @@ const Onboarding = ({navigation}) => {
     }
   };
 
-  const getTitleText = () => {
-    switch (currentStep) {
-      case StepEnum.LOCATION:
-        return languages.t('label.launch_header_location');
-      case StepEnum.BLUETOOTH:
-        return languages.t('label.launch_header_bluetooth');
-      case StepEnum.NOTIFICATIONS:
-        return languages.t('label.launch_notif_header');
-      case StepEnum.HCA_SUBSCRIPTION:
-        return languages.t('label.launch_authority_header');
-      case StepEnum.DONE:
-        return languages.t('label.launch_done_header');
-    }
-  };
 
-  const getTitleTextView = () => {
-    const use = currentStep === StepEnum.DONE ? 'headline1' : 'headline2';
-
-    return (
-      <Typography style={styles.headerText} use={use} testID='Header'>
-        {getTitleText()}
-      </Typography>
-    );
-  };
-
-  const getSubtitleText = () => {
-    let style, text;
-
-    switch (currentStep) {
-      case StepEnum.LOCATION:
-        [style, text] = [
-          styles.subheaderText,
-          languages.t('label.launch_subheader'),
-        ];
-        break;
-      case StepEnum.BLUETOOTH:
-        [style, text] = [
-          styles.subheaderText,
-          languages.t('label.launch_subheader'),
-        ];
-        break;
-      case StepEnum.NOTIFICATIONS:
-        [style, text] = [
-          styles.subheaderText,
-          languages.t('label.launch_notif_subheader'),
-        ];
-        break;
-      case StepEnum.HCA_SUBSCRIPTION:
-        [style, text] = [
-          styles.subheaderTextWide,
-          languages.t('label.launch_authority_subheader'),
-        ];
-        break;
-      case StepEnum.DONE:
-        [style, text] = [
-          styles.subheaderText,
-          languages.t('label.launch_done_subheader'),
-        ];
-        break;
+  const Title = () => {
+    const getTitleText = () => {
+      switch (currentStep) {
+        case StepEnum.LOCATION:
+          return languages.t('label.launch_header_location');
+        case StepEnum.BLUETOOTH:
+          return languages.t('label.launch_header_bluetooth');
+        case StepEnum.NOTIFICATIONS:
+          return languages.t('label.launch_notif_header');
+        case StepEnum.HCA_SUBSCRIPTION:
+          return languages.t('label.launch_authority_header');
+        case StepEnum.DONE:
+          return languages.t('label.launch_done_header');
+      }
     }
 
+    const text = getTitleText()
+
     return (
-      <Typography style={style} use={'body3'}>
+      <Typography style={styles.headerText} use={headerThemeStyle} testID='Header'>
         {text}
       </Typography>
     );
   };
 
-  const getLocationPermission = () => {
+
+  const SubTitle = () => {
+    const getSubTitleText = () => {
+      switch (currentStep) {
+        case StepEnum.LOCATION:
+          return languages.t('label.launch_subheader')
+        case StepEnum.BLUETOOTH:
+          return languages.t('label.launch_subheader')
+        case StepEnum.NOTIFICATIONS:
+          return languages.t('label.launch_notif_subheader')
+        case StepEnum.HCA_SUBSCRIPTION:
+          return languages.t('label.launch_authority_subheader')
+        case StepEnum.DONE:
+          return languages.t('label.launch_done_subheader')
+        default:
+          return languages.t('label.launch_subheader')
+      }
+    }
+
+    const subTitleText = getSubTitleText()
+
     return (
-      <>
-        <View style={styles.divider} />
-        <PermissionDescription
-          title={languages.t('label.launch_access_location')}
-          status={locationPermission}
-        />
-        <View style={styles.divider} />
-      </>
+      <Typography style={subTitleStyle} use={'body3'}>
+        {subTitleText}
+      </Typography>
     );
   };
 
-  const getBluetoothPermission = () => {
+  const SkipStepButton = () => {
     return (
-      <>
-        <View style={styles.divider} />
-        <PermissionDescription
-          title={languages.t('label.launch_access_bluetooth')}
-          status={bluetoothPermission}
-        />
-        <View style={styles.divider} />
-      </>
-    );
-  };
-
-  const getNotificationsPermissionIfIOS = () => {
-    return (
-      isPlatformiOS() && (
-        <>
-          <PermissionDescription
-            title={languages.t('label.launch_notification_access')}
-            status={notificationPermission}
-          />
-          <View style={styles.divider} />
-        </>
-      )
-    );
-  };
-
-  const getAuthSubscriptionStatus = () => {
-    return (
-      <>
-        <PermissionDescription
-          title={languages.t('label.launch_authority_access')}
-          status={authSubscriptionStatus}
-        />
-        <View style={styles.divider} />
-      </>
+      <TouchableOpacity onPress={skipCurrentStep}>
+        <Typography style={styles.skipThisStepBtn} use={'body1'}>
+          {languages.t('label.skip_this_step')}
+        </Typography>
+      </TouchableOpacity>
     );
   };
 
@@ -467,38 +382,73 @@ const Onboarding = ({navigation}) => {
     }
   };
 
-  const getSkipStepButton = () => {
-    if (currentStep !== StepEnum.DONE) {
-      return (
-        <TouchableOpacity onPress={skipCurrentStep}>
-          <Typography style={styles.skipThisStepBtn} use={'body1'}>
-            {languages.t('label.skip_this_step')}
-          </Typography>
-        </TouchableOpacity>
-      );
+
+  const PermissonButtons = () => {
+    if (isGPS) {
+      return <LocationPermissionQuestions />
+    } else {
+      return <BluetoothPermissionQuestions />
     }
-  };
+  }
 
   const LocationPermissionQuestions = () => {
     return (
-      <>
-        {getLocationPermission()}
-        {getNotificationsPermissionIfIOS()}
-        {__DEV__ && getAuthSubscriptionStatus()}
-        <View style={styles.spacer} />
-      </>
+      <View>
+        <PermissionButton
+          title={languages.t('label.launch_access_location')}
+          status={locationPermission}
+        />
+        {isiOS ?
+          <PermissionButton
+            title={languages.t('label.launch_notification_access')}
+            status={notificationPermission}
+          />
+          : null
+        }
+        {__DEV__ ?
+          <PermissionButton
+            title={languages.t('label.launch_authority_access')}
+            status={authSubscriptionStatus}
+          />
+          : null}
+      </View>
     );
   };
 
   const BluetoothPermissionQuestions = () => {
     return (
-      <>
-        {getBluetoothPermission()}
-        {getNotificationsPermissionIfIOS()}
-        <View style={styles.spacer} />
-      </>
+      <View>
+        <PermissionButton
+          title={languages.t('label.launch_access_bluetooth')}
+          status={bluetoothPermission}
+        />
+        {isiOS ?
+          <PermissionButton
+            title={languages.t('label.launch_notification_access')}
+            status={notificationPermission}
+          />
+          : null
+        }
+      </View>
     );
   };
+
+  const PermissionButton = ({title, status}) => {
+    return (
+      <>
+        <PermissionDescription
+          title={title}
+          status={status}
+        />
+        <View style={styles.divider} />
+      </>
+    )
+  }
+
+
+  const headerThemeStyle = currentStep === StepEnum.DONE ? 'headline1' : 'headline2';
+  const subTitleStyle = (currentStep === StepEnum.HCA_SUBSCRIPTION) ? styles.subheaderTextWide : styles.subheaderText
+  const buttonText = getButtonText()
 
   return (
     <Theme use='violet'>
@@ -513,20 +463,17 @@ const Onboarding = ({navigation}) => {
 
         <View style={styles.mainContainer}>
           <View style={styles.contentContainer}>
-            {getTitleTextView()}
-            {getSubtitleText()}
-            {getSkipStepButton()}
+            <Title style={headerThemeStyle} />
+            <SubTitle style={subTitleStyle} />
+            {currentStep !== StepEnum.Done ? <SkipStepButton /> : null}
             <View style={styles.statusContainer}>
-              {isGPSTracingStrategy() ? (
-                <LocationPermissionQuestions />
-              ) : (
-                  <BluetoothPermissionQuestions />
-                )}
+              <PermissonButtons />
+              <View style={styles.spacer} />
             </View>
           </View>
         </View>
         <View style={sharedStyles.footerContainer}>
-          <Button label={getButtonText()} onPress={buttonPressed} />
+          <Button label={buttonText} onPress={onButtonPressed} />
         </View>
       </ImageBackground>
     </Theme>
