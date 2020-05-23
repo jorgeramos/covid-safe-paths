@@ -24,7 +24,7 @@ import io.realm.kotlin.where
 import org.pathcheck.covidsafepaths.MainApplication
 import covidsafepaths.storage.Location.Companion.areLocationsNearby
 import covidsafepaths.storage.Location.Companion.createAssumedLocation
-import org.pathcheck.covidsafepaths.util.getCutoffTimestamp
+import covidsafepaths.util.getCutoffTimestamp
 import java.security.SecureRandom
 import java.util.UUID
 
