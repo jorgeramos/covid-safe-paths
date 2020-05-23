@@ -11,6 +11,8 @@
     "run-ios-gps": "yarn install:pod && react-native run-ios --scheme \"GPS_Development\"",
     "preinstall": "node -e \"if(process.env.npm_execpath.indexOf('yarn') === -1) throw new Error('You must use Yarn to install, not NPM')\"",
     "install:pod": "cd ios && bundle install && bundle exec pod install",
+    "install:gps": "rm -rf node_modules && yarn install",
+    "install:bte": "rm -rf node_modules && yarn install --ignore-optional",
     "lint": "eslint ./",
     "postinstall": "patch-package && npx react-native-jetifier",
     "postversion": "react-native-version",
@@ -55,9 +57,7 @@
   "dependencies": {
     "@emotion/core": "^10.0.28",
     "@emotion/native": "^10.0.27",
-    "@mauron85/react-native-background-geolocation": "^0.6.3",
     "@react-native-community/async-storage": "^1.8.1",
-    "@react-native-community/geolocation": "^2.0.2",
     "@react-native-community/masked-view": "0.1.5",
     "@react-native-community/push-notification-ios": "^1.1.0",
     "@react-native-community/viewpager": "^3.3.0",
@@ -123,6 +123,7 @@
     "i18next-parser": "tstirrat/i18next-parser#guard-plural-rule",
     "import-sort-config": "^6.0.0",
     "import-sort-style-module": "^6.0.0",
+    "install-subset": "^4.2.0",
     "jest": "^25.1.0",
     "lint-diff": "^1.2.1",
     "lint-staged": "^10.0.9",
@@ -133,6 +134,10 @@
     "react-native-svg-transformer": "^0.14.3",
     "react-native-version": "^4.0.0",
     "react-test-renderer": "16.9.0"
+  },
+  "optionalDependencies": {
+    "@react-native-community/geolocation": "^2.0.2",
+    "@mauron85/react-native-background-geolocation": "^0.6.3"
   },
   "importSort": {
     ".js, .jsx, .es6, .es, .mjs, .ts, .tsx": {
